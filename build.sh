@@ -445,17 +445,18 @@ fi
 
 ##------------------------------------------------------##
 
-# Save to config
-echo -e "$yellow \n👉 Do you want to save to .config? [Y/n] $white"
+# Save to SDCard
+echo -e "$yellow \n👉 Do you want to save to SDCard? [Y/n] $white"
     read -t 15 -p "$(tput setaf 171) Enter your answer: " response || {
     echo -e "$cyan Timeout of 15 seconds reached. No input received. $white"
     }
 
 if [[ $response =~ ^[Yy]$ ]]; then
 
-    cp -r out/.config arch/arm64/configs/sakura_defconfig
+cp -r $(pwd)/AnyKernel3/${ANYK_VERSION}-U${RELEASE}-${BUILD_TIME}.zip /sdcard/RedMarsh
+
 else
-  echo -e "$lgreen .config to arch/arm64/configs/ directory was not moved. $white"
+  echo -e "$lgreen Kernel to /sdcard/ResMarsh directory was not moved. $white"
 fi
 
 ##------------------------------------------------------##
