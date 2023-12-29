@@ -136,121 +136,6 @@ fi
 
 ##------------------------------------------------------##
 
-# Clone toolchain
-msg $green "|| Cloning Toolchain ||" $white
-if [[ -z $(ls -A | grep -E 'clang-neutron|clang-weebx|clang-greenforce|clang-trb|clang-playground|clang-zyc|clang-llvm|gcc-eva') ]]; then
-    echo -e "$yellow No existing Toolchain versions found. Proceeding to download... $white"
-    read -t 5 -p "$(tput setaf 171)👉 Which version of Clang would you like to use? (1) clang-neutron, (2) clang-weebx, (3) clang-greenforce, (4) clang-trb, (5) clang-playground, (6) clang-zyc, (7) clang-llvm or (8) gcc-eva.$(tput sgr0)
-    Type your answer here: " VERSION_CHOICE || {
-    echo -e "$cyan Timeout of 5 seconds reached. No input received. $white"
-    echo -e "$lgreen Setting choice to 2. $white"
-    VERSION_CHOICE=2
-    }
-
-    if [ "$VERSION_CHOICE" = "1" ]; then
-        CLANG_VERSION="clang-neutron"
-    elif [ "$VERSION_CHOICE" = "2" ]; then
-        CLANG_VERSION="clang-weebx"
-    elif [ "$VERSION_CHOICE" = "3" ]; then
-        CLANG_VERSION="clang-greenforce"
-    elif [ "$VERSION_CHOICE" = "4" ]; then
-        CLANG_VERSION="clang-trb"
-    elif [ "$VERSION_CHOICE" = "5" ]; then
-        CLANG_VERSION="clang-playground"
-    elif [ "$VERSION_CHOICE" = "6" ]; then
-        CLANG_VERSION="clang-zyc"
-    elif [ "$VERSION_CHOICE" = "7" ]; then
-        CLANG_VERSION="clang-llvm"
-    elif [ "$VERSION_CHOICE" = "8" ]; then
-        GCC_VERSION="gcc-eva"
-    else
-        echo -e "$red Please select a valid option." $white
-        exit 1 # Exit script if invalid choice is made
-    fi
-    
-    echo -e "$blue << Toolchain download... >> $white"
-
-    if [ "$CLANG_VERSION" = "clang-neutron" ]; then
-        mkdir "${CLANG_VERSION}"
-        cd "${CLANG_VERSION}"
-        bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -S
-        cd ..
-    elif [ "$CLANG_VERSION" = "clang-weebx" ]; then
-        wget "$(curl -s https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)" -O "weebx-clang.tar.gz"
-        mkdir clang-weebx && tar -xf weebx-clang.tar.gz -C clang-weebx --strip-components=1 && rm -f weebx-clang.tar.gz
-    elif [ "$CLANG_VERSION" = "clang-greenforce" ]; then
-        git clone https://gitlab.com/fadlyas07/clang-llvm.git ${CLANG_VERSION} --depth=1 --single-branch --no-tags
-    elif [ "$CLANG_VERSION" = "clang-trb" ]; then 
-        git clone https://gitlab.com/varunhardgamer/trb_clang.git ${CLANG_VERSION} --depth=1 --single-branch --no-tags
-    elif [ "$CLANG_VERSION" = "clang-playground" ]; then 
-        git clone https://gitlab.com/PixelOS-Devices/playgroundtc.git ${CLANG_VERSION} --depth=1 --single-branch --no-tags
-    elif [ "$CLANG_VERSION" = "clang-zyc" ]; then
-        mkdir "${CLANG_VERSION}"
-        cd "${CLANG_VERSION}"
-        # Get the link from the txt file
-        link=$(curl -s https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt)
-        # Download the file
-        curl -o clang-zyc.tar.gz -L "$link"
-        # Extract the file
-        tar -xf clang-zyc.tar.gz
-        # Remove the tarball
-        rm clang-zyc.tar.gz
-        cd ..
-    elif [ "$CLANG_VERSION" = "clang-llvm" ]; then 
-        # AOSP clang
-        CURRENT_CLANG=$(curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+/refs/heads/master/ | grep -oE "clang-r[0-9a-f]+" | sort -u | tail -n1)
-        echo -e "FETCHING $CURRENT_CLANG from AOSP..."
-        git clone https://gitlab.com/Neebe3289/android_prebuilts_clang_host_linux-x86.git -b $CURRENT_CLANG ${CLANG_VERSION} --depth=1 --single-branch --no-tags
-        #aria2c -q -j64 -x4 -s4 -k50M -c "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/$CURRENT_CLANG.tar.gz"
-        #wget -q -c -O $CURRENT_CLANG.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/$CURRENT_CLANG.tar.gz" | pv
-        #mkdir -p clang-llvm && tar -xf ./*.tar.gz -C /clang-llvm && rm ./*.tar.gz && rem clang-llvm
-        touch $CLANG_VERSION/bin/aarch64-linux-gnu-elfedit && chmod +x /$CLANG_VERSION/bin/aarch64-linux-gnu-elfedit
-        touch $CLANG_VERSION/bin/arm-linux-gnueabi-elfedit && chmod +x /$CLANG_VERSION/bin/arm-linux-gnueabi-elfedit
-
-        msg $green "|| Cloning Binutils ||" $white
-	    git clone https://android.googlesource.com/platform/prebuilts/gas/linux-x86.git -b master gcc --depth=1 --single-branch --no-tags
-        #git clone https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git --depth=1 gcc64
-		#git clone https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git  --depth=1 gcc
-
-	    # Toolchain Directory defaults to clang-llvm
-	    TC_DIR=$KERNEL_DIR/${CLANG_VERSION}
-	    GCC_DIR=$KERNEL_DIR/gcc
-    elif [ "$GCC_VERSION" = "gcc-eva" ]; then
-        git clone https://github.com/mvaisakh/gcc-arm.git gcc --depth=1 --single-branch --no-tags
-        git clone https://github.com/mvaisakh/gcc-arm64.git ${GCC_VERSION} --depth=1 --single-branch --no-tags
-    fi
-    else
-        if [ "$CLANG_VERSION" = "clang-neutron" ]; then
-            cd "${CLANG_VERSION}"
-            echo -e "$yellow $CLANG_VERSION found, checking updates & skipping step $white"
-            bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -U
-            bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -I
-            cd ..
-        fi
-        # Check if there is only one folder starting with "clang-"
-        num_dirs=$(ls -d clang-* | wc -l)
-        if [ $num_dirs -eq 1 ]; then
-            CLANG_VERSION=$(ls -d clang-*/)
-            echo -e "${yellow} Clang found! Skipping step ${white}"
-        fi
-        # Check if there is only one folder starting with "gcc-"
-        num_dirs=$(ls -d gcc-* | wc -l)
-        if [ $num_dirs -eq 1 ]; then
-            GCC_VERSION=$(ls -d gcc-*/)
-            echo -e "${yellow} GCC found! Skipping step ${white}"
-        fi
-
-        if [ -n "$CLANG_VERSION" ] && [ -n "$GCC_VERSION" ]; then
-            echo -e "$red ERROR: Multiple or no Clang/GCC versions found. Please specify which version to use." $white
-            exit 1
-        fi
-
-fi
-    # Show which toolchain is being used
-    echo -e "${greenish_yellow} Currently using toolchain version: $CLANG_VERSION $GCC_VERSION ${white}"
-
-##------------------------------------------------------##
-
 # Clone AnyKernel3
 ANYKERNEL3_VERSION="AnyKernel3"
 msg $green "|| Cloning AnyKernel3 ||" $white
@@ -274,7 +159,7 @@ echo -e "10. Mystique\n${white}"
 read -t 5 -p "Enter your choice [1-10]: " choice || {
     echo -e "$cyan Timeout of 5 seconds reached. No input received. $white"
     echo -e "$lgreen Ak3 choice to 1. $white"
-    choice=1
+    choice=4
     }
 
     case $choice in
@@ -355,7 +240,6 @@ fi
 
 # Clean-up
 echo -e "${orange_yellow} Clean-up ${white}"
-rm -rf out/*
 rm -rf error.log
 rm -rf changelog/*
 rm -rf ./*.tar.gz
@@ -411,78 +295,65 @@ fi
 
 ##------------------------------------------------------##
 
-# Targets | Makefile
-make O=out ARCH=arm64 daisy_defconfig
+# Targets | export
+export CROSS_COMPILE_ARM32=arm-linux-gnueabihf-
+       CROSS_COMPILE=aarch64-linux-gnu-
 
 ##------------------------------------------------------##
 
-# Compile the kernel
-if [ $choice -eq 1 ]; then
-msg $blink_yellow "|| 🔨 Started Compilation with Clang ||" $white
-CLANG_ROOTDIR="$(pwd)/${CLANG_VERSION}"
-TOOLCHAIN="clang"
+# Targets | Makefile
+echo -e "$yellow \n ^=^q^i Do you want to Targets to .config? [Y/n] $white"
+    read -t 15 -p "$(tput setaf 171) Enter your answer: " response || {
+    echo -e "$cyan Timeout of 15 seconds reached. No input received. $white"
+    }
 
-build_kernel() {
-Start=$(date +"%s")
+if [[ $response =~ ^[Yy]$ ]]; then
 
-if [ "$TOOLCHAIN" == ${TOOLCHAIN} ]; then
+make -j6 O=out ARCH=arm64 SUBARCH=arm64 CC=clang-17 daisy_defconfig
 
-make -j$(nproc) ARCH=arm64 SUBARCH=arm64 O=out \
-    CC="${CLANG_ROOTDIR}/bin/clang" \
-    LD="${CLANG_ROOTDIR}/bin/ld.lld" \
-    AR="${CLANG_ROOTDIR}/bin/llvm-ar" \
-    AS="${CLANG_ROOTDIR}/bin/llvm-as" \
-    NM="${CLANG_ROOTDIR}/bin/llvm-nm" \
-    OBJCOPY="${CLANG_ROOTDIR}/bin/llvm-objcopy" \
-    OBJDUMP="${CLANG_ROOTDIR}/bin/llvm-objdump" \
-    STRIP="${CLANG_ROOTDIR}/bin/llvm-strip" \
-    LLVM=1 \
-    LLVM_IAS=1 \
-    CROSS_COMPILE="${CLANG_ROOTDIR}/bin/aarch64-linux-gnu-" \
-    CROSS_COMPILE_ARM32="${CLANG_ROOTDIR}/bin/arm-linux-gnueabi-" \
-    2>&1 | tee error.log
-fi
-
-End=$(date +"%s")
-Diff=$(($End - $Start))
-}
-build_kernel
-
-elif [ $choice -eq 2 ]; then
-# GCC
-msg $blink_yellow "|| 🔨 Started Compilation with GCC ||" $white
-GCC_ROOTDIR="$(pwd)/${GCC_VERSION}"
-GCC_ARM="$(pwd)/gcc"
-TOOLCHAIN="gcc"
-
-build_kernel() {
-Start=$(date +"%s")
-
-if [ "$TOOLCHAIN" == ${TOOLCHAIN} ]; then
-
-make -j$(nproc) ARCH=arm64 SUBARCH=arm64 O=out \
-    PATH=$GCC_ROOTDIR/bin:$GCC_ARM/bin:/usr/bin:${PATH} \
-    CROSS_COMPILE=aarch64-elf- \
-    CROSS_COMPILE_ARM32=arm-eabi- \
-    AR=aarch64-elf-ar \
-    NM=llvm-nm \
-    LD=ld.lld \
-    OBCOPY=llvm-objcopy \
-    OBJDUMP=aarch64-elf-objdump \
-    STRIP=aarch64-elf-strip \
-    2>&1 | tee error.log \
-    2>&1 | tee out/error.log
-fi
-
-End=$(date +"%s")
-Diff=$(($End - $Start))
-}
-build_kernel
 
 else
-  echo "Invalid choice."
-  exit 1
+  echo -e "$lgreen .config to makefile  was not Targets. $white"
 fi
+
+##------------------------------------------------------##
+
+# Change to ship menuconfig
+echo -e "$yellow \n ^=^q^i Do you want to change to .config? [Y/n] $white"
+    read -t 15 -p "$(tput setaf 171) Enter your answer: " response || {
+    echo -e "$cyan Timeout of 15 seconds reached. No input received. $white"
+    }
+
+if [[ $response =~ ^[Yy]$ ]]; then
+
+make -j6 O=out ARCH=arm64 SUBARCH=arm64 CC=clang-17 menuconfig
+
+
+else
+  echo -e "$lgreen .config to menuconfig was not change. $white"
+fi
+
+##------------------------------------------------------##
+
+# Save new .config to main
+echo -e "$yellow \n ^=^q^i Do you want to save to .config? [Y/n] $white"
+    read -t 15 -p "$(tput setaf 171) Enter your answer: " response || {
+    echo -e "$cyan Timeout of 15 seconds reached. No input received. $white"
+    }
+
+if [[ $response =~ ^[Yy]$ ]]; then
+
+cp -r out/.config arch/arm64/configs/RedMarsh_defconfig
+
+else
+echo -e "$lgreen .config to arch/arm64/configs/ directory was not moved. $white"
+fi
+
+##------------------------------------------------------##
+#Build Start
+
+make -j6 O=out ARCH=arm64 SUBARCH=arm64 CC=clang-17
+
 
 ##------------------------------------------------------##
 
@@ -493,7 +364,7 @@ zip_kernelimage() {
     rm -rf "$(pwd)"/AnyKernel3/*.zip
     BUILD_TIME=$(date +"%d%m%Y-%H%M")
     cd AnyKernel3 || exit
-    zip -r9 "${ANYK_VERSION}"-r"${RELEASE}"-"${BUILD_TIME}".zip ./*
+    zip -r9 "${ANYK_VERSION}"-U"${RELEASE}"-"${BUILD_TIME}".zip ./*
     cd ..
 }
 
@@ -501,8 +372,8 @@ zip_kernelimage() {
 
 # Get MD5SUM and SHASUM of the zipped kernel
 Hash() {
-    SHA=$(shasum "$(pwd)"/AnyKernel3/${ANYK_VERSION}-r"${RELEASE}"-"${BUILD_TIME}".zip | cut -f 1 -d '/')
-    MD5=$(md5sum "$(pwd)"/AnyKernel3/${ANYK_VERSION}-r"${RELEASE}"-"${BUILD_TIME}".zip | cut -f 1 -d '/')
+    SHA=$(shasum "$(pwd)"/AnyKernel3/${ANYK_VERSION}-U"${RELEASE}"-"${BUILD_TIME}".zip | cut -f 1 -d '/')
+    MD5=$(md5sum "$(pwd)"/AnyKernel3/${ANYK_VERSION}-U"${RELEASE}"-"${BUILD_TIME}".zip | cut -f 1 -d '/')
 }
 
 ##------------------------------------------------------##
@@ -512,7 +383,7 @@ FILE="$(pwd)/out/arch/arm64/boot/Image.gz-dtb"
 if [ -f "$FILE" ]; then
     zip_kernelimage
     Hash
-    echo -e "$green << Build completed in $(($Diff / 60)) minutes and $(($Diff % 60)) seconds >> \n $white"
+    echo -e "$green << Build completed in $(($Diff /60)) minutes and $(($Diff % 60)) seconds >> \n $white"
     echo -e "The kernel has successfully been compiled and can be found in $(pwd)/AnyKernel3/${greenish_yellow}${ANYK_VERSION}-r${RELEASE}-${BUILD_TIME}.zip $white"
     echo -e "$greenish_yellow  MD5 Checksum : $MD5 $white"
     echo -e "$greenish_yellow SHA1 Checksum : $SHA $white"
@@ -523,8 +394,8 @@ if [ -f "$FILE" ]; then
     # Upload to mega
     # Asks the user if they want to upload the file
     echo -e "$yellow \n👉 Do you want to upload the file to megaupload? (y/n) $white"
-    read -t 5 -p "$(tput setaf 171) Enter your answer: " answer || {
-    echo -e "$cyan Timeout of 5 seconds reached. No input received. $white"
+    read -t 15 -p "$(tput setaf 171) Enter your answer: " answer || {
+    echo -e "$cyan Timeout of 15 seconds reached. No input received. $white"
     echo -e "$lgreen Setting choice to n. $white"
     answer=n
     }
@@ -537,7 +408,7 @@ if [ -f "$FILE" ]; then
     read -s -p "$(tput setaf 171) Password: " password
 
     # Uploads the file
-    megaput $(pwd)/AnyKernel3/${ANYK_VERSION}-r${RELEASE}-${BUILD_TIME}.zip -u $email -p $password
+    megaput $(pwd)/AnyKernel3/${ANYK_VERSION}-U${RELEASE}-${BUILD_TIME}.zip -u $email -p $password
     countdown 3
     echo -e "$reset 👍 $white"
     fi
@@ -574,18 +445,17 @@ fi
 
 ##------------------------------------------------------##
 
-# Nuke Toolchain
-echo -e "$yellow \n👉 Do you want to remove the Toolchain directory? [Y/n] $white"
-    read -t 5 -p "$(tput setaf 171) Enter your answer: " response || {
-    echo -e "$cyan Timeout of 5 seconds reached. No input received. $white"
+# Save to config
+echo -e "$yellow \n👉 Do you want to save to .config? [Y/n] $white"
+    read -t 15 -p "$(tput setaf 171) Enter your answer: " response || {
+    echo -e "$cyan Timeout of 15 seconds reached. No input received. $white"
     }
 
 if [[ $response =~ ^[Yy]$ ]]; then
-    rm -rf gcc 
-    rm -rf gcc-*
-    rm -rf clang-*
+
+    cp -r out/.config arch/arm64/configs/sakura_defconfig
 else
-  echo -e "$lgreen Toolchain directory was not removed. $white"
+  echo -e "$lgreen .config to arch/arm64/configs/ directory was not moved. $white"
 fi
 
 ##------------------------------------------------------##
